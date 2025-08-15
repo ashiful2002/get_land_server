@@ -224,7 +224,7 @@ async function run() {
     });
 
     ///=============================//
-    app.get("/properties", verifyFirebaseToken, async (req, res) => {
+    app.get("/properties", async (req, res) => {
       try {
         const search = req.query.search;
         const sortBy = req.query.sortBy;
@@ -376,7 +376,7 @@ async function run() {
     // =========================== properties apis ends==========
 
     // === wishlist starts =======================
-    app.get("/wishlist", verifyFirebaseToken, async (req, res) => {
+    app.get("/wishlist",  async (req, res) => {
       try {
         const { email } = req.query;
 
@@ -389,7 +389,7 @@ async function run() {
       }
     });
 
-    app.get("/wishlist/:id", verifyFirebaseToken, async (req, res) => {
+    app.get("/wishlist/:id",  async (req, res) => {
       const { id } = req.params;
       const query = { _id: new ObjectId(id) };
 
@@ -593,7 +593,7 @@ async function run() {
       const query = propertyId ? { propertyId } : {};
       const result = await reviewsCollection
         .find(query)
-        .sort({ createdAt: -1 })
+        .sort({ date: -1 })
         .toArray();
       res.send(result);
     });
