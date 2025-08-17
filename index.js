@@ -224,38 +224,39 @@ async function run() {
     });
 
     ///=============================//
-    app.get("/properties", async (req, res) => {
-      try {
-        const search = req.query.search;
-        const sortBy = req.query.sortBy;
-        const sort = req.query.sort;
+  app.get("/properties", async (req, res) => {
+  try {
+    const search = req.query.search || "";
+    const sortBy = req.query.sortBy;
+    const sort = req.query.sort;
 
+    // ✅ always start with empty query
+    const query = {};
 
-        if (search) {
-          const searchRegex = new RegExp(search, "i");
-          query.$or = [{ location: { $regex: searchRegex } }];
-        }
+    // ✅ add search if provided
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      query.$or = [{ location: { $regex: searchRegex } }, { title: { $regex: searchRegex } }];
+    }
 
-        const sortOption = {};
-        if (sort === "asc" && (sortBy === "minPrice" || sortBy === "maxPrice"))
-          sortOption[sortBy] = 1;
-        else if (
-          sort === "desc" &&
-          (sortBy === "minPrice" || sortBy === "maxPrice")
-        )
-          sortOption[sortBy] = -1;
+    // ✅ build sort option
+    const sortOption = {};
+    if (sortBy && (sortBy === "minPrice" || sortBy === "maxPrice")) {
+      sortOption[sortBy] = sort === "desc" ? -1 : 1;
+    }
 
-        const result = await propertiesCollection
-          .find()
-          .sort(sortOption)
-          .toArray();
+    const result = await propertiesCollection
+      .find(query) // ✅ query always valid
+      .sort(sortOption)
+      .toArray();
 
-        res.send(result);
-      } catch (error) {
-        console.error("Property search error:", error);
-        res.status(500).send({ message: "Internal server error" });
-      }
-    });
+    res.send(result);
+  } catch (error) {
+    console.error("Property search error:", error);
+    res.status(500).send({ message: "Internal server error" });
+  }
+});
+
 
     // get propery by id
     app.get("/properties/:id", verifyFirebaseToken, async (req, res) => {
@@ -280,8 +281,8 @@ async function run() {
     app.post("/properties", verifyFirebaseToken, async (req, res) => {
       const property = req.body;
       const { agent_email } = property;
-      property.maxPrice = Number(property.maxPrice)
-            property.minPrice = Number(property.minPrice)
+      property.maxPrice = Number(property.maxPrice);
+      property.minPrice = Number(property.minPrice);
 
       const agent = await usersCollection.findOne({ email: agent_email });
       if (!agent || agent.status === "fraud") {
@@ -293,18 +294,17 @@ async function run() {
       res.send(result);
     });
     // mupdate property by id
-  app.patch("/properties/:id", async (req, res) => {
-  const id = req.params.id;
-  const updatedData = req.body;
+    app.patch("/properties/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
 
-  const result = await propertiesCollection.updateOne(
-    { _id: new ObjectId(id) },
-    { $set: updatedData }
-  );
+      const result = await propertiesCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedData }
+      );
 
-  res.send(result);
-});
-
+      res.send(result);
+    });
 
     app.patch(
       "/properties/update/:id",
@@ -376,7 +376,7 @@ async function run() {
     // =========================== properties apis ends==========
 
     // === wishlist starts =======================
-    app.get("/wishlist",  async (req, res) => {
+    app.get("/wishlist", async (req, res) => {
       try {
         const { email } = req.query;
 
@@ -389,7 +389,7 @@ async function run() {
       }
     });
 
-    app.get("/wishlist/:id",  async (req, res) => {
+    app.get("/wishlist/:id", async (req, res) => {
       const { id } = req.params;
       const query = { _id: new ObjectId(id) };
 
@@ -610,7 +610,7 @@ async function run() {
       const result = await reviewsCollection
         .find(review)
         .sort({ date: -1 })
-        .limit(4)
+        .limit(5)
         .toArray();
       res.send(result);
     });
